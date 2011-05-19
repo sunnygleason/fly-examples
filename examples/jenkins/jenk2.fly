@@ -1,0 +1,52 @@
+module jenk2;
+
+public;
+
+u32 jenkins_hash(u32 seed, <<d>>) ->
+  seed' = 0xDEADBEEF + (d.length << 2) + seed,
+  jenk([seed, seed, seed], d);
+
+
+private;
+
+u32 jenk(u32[] [a, b, c], <<u32[] [a1, b1, c1] | d>>) ->
+  [a, b, c]' = mix(a + a1, b + b1, c + c1),
+  jenk([a, b, c], d);
+
+u32 jenk(u32[] [a, b, c], <<u32[]? [a1, b1, c1]>>) ->
+  [_, _, c]' = mix(a + a1, b + b1, c + c1),
+  c;
+
+u32 jenk(u32[] [a, b, c], <<>>) ->
+  [_, _, c]' = final(a, b, c),
+  c;
+
+u32[3] mix(u32[] [a, b, c]) ->
+  [a, b, c]' = submix([a, b, c], 4),
+  [b, c, a]' = submix([b, c, a], 6),
+  [c, a, b]' = submix([c, a, b], 8),
+  [a, b, c]' = submix([a, b, c], 16),
+  [b, c, a]' = submix([b, c, a], 19),
+  [c, a, b]' = submix([c, a, b], 4),
+  [a, b, c];
+
+u32[3] submix(u32[] [a, b, c], u8 rotVal) ->
+  a' -= c,
+  a' ^= rolq(c, rotVal),
+  c' += b,
+  [a, b, c];
+
+u32[3] final(u32[] [a, b, c]) ->
+  [a, b, c]' = subfin([a, b, c], 14),
+  [b, c, a]' = subfin([b, c, a], 11),
+  [c, a, b]' = subfin([c, a, b], 25),
+  [a, b, c]' = subfin([a, b, c], 16),
+  [b, c, a]' = subfin([b, c, a], 4),
+  [c, a, b]' = subfin([c, a, b], 14),
+  [a, b, c]' = subfin([a, b, c], 24),
+  [a, b, c];
+
+u32[3] subfin(u32[] [a, b, c], u8 rotVal) ->
+  c' ^= b,
+  c' -= rolq(b, rotVal),
+  [a, b, c];
