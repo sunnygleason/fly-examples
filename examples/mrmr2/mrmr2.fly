@@ -1,0 +1,66 @@
+module mrmr2;
+
+% externally visible functions
+public;                
+
+%%
+%% Main Murmur Hash Function definition
+%%
+%% arg : u64 seed for hash
+%% arg : binary d (similar to erlang binary)
+%% ret : u64 hash value
+%%
+u64 murmur2(u64 seed, <<d>>) ->
+  seed2 = imulq(d.length, M),   % initial step: multiply d.length and M
+  seed' = xorq(seed, seed2),    % in-place xor seed with seed2
+  mrmr2(seed, d);               % tail call
+
+
+%% inner implementation of the module
+private;
+
+u64 M = 0xc6a4a7935bd1e995L;    % u64 constant def
+u8  R = 47;                     % u8 constant def
+
+%%
+%% partial murmur computation
+%%
+%% arg : u64 h
+%% arg : unnamed binary to be pattern matched
+%%       consists of at least 8-bytes read as u64
+%%       followed by the 'rest' of the binary as d
+%%
+u64 mrmr2(u64 h, <<u64 k | d>>) ->
+  k' = imulq(k, M),     % multiplication
+  k' = rorq(k, R),      % right rotation operator
+  k' = imulq(k, M),     % multiplication
+  h' = xorq(h, k),      % xor
+  h' = imulq(h, M),     % multiplication
+  mrmr2(h, d);          % tail call w/ rest
+
+
+%%
+%% partial murmur computation
+%%
+%% arg : u64 h
+%% arg : unnamed binary to be pattern matched
+%%       consists of less than 8-bytes read as u64 (big-endian)
+%%       into k, number of bytes read is put into 'a'
+%%
+u64 mrmr2(u64 h, <<u64? k:a>>) ->
+  h' = xorq(h, k),     % xor
+  h' = imulq(h, m),    % multiplication
+  mrmr2(h, <<>>);      % tail call with empty binary
+
+
+%%
+%% finish murmur computation
+%%
+%% arg : u64 h
+%% arg : empty binary to be pattern matched
+%%
+u64 mrmr2(u64 h, <<>>) ->
+  h' = rorq(h, R),     % right rotate
+  h' = imulq(h, M),    % multiplication
+  rorq(h, R);          % right rotate, return
+

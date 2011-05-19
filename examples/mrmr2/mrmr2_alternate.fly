@@ -1,0 +1,39 @@
+%%
+%% This file is an experiment into
+%% using operators, and providing vector
+%% and fold capabilities
+%%
+
+u64 M = 0xc6a4a7935bd1e995L;
+u8  R = 47;
+
+%%
+%% main entry point: murmur2 hash of binary
+%%
+u64 murmur2(u64 seed, <<d>>) ->
+  mrmr2(seed ^ (d.length * M), d);
+
+%%
+%% process a vector of k u64 of size chosen by the compiler/runtime
+%%
+u64 mrmr2(u64 h, <<u64[] k | d>>) ->
+  k' *= M,       % in-place multiplication
+  k' ^>>= R,     % in-place right rotation operator
+  k' *= M,
+  h' = k.foldl(h, {|a, x| (a * M) ^ x}),  % foldl accumulation of anonymous function
+  mrmr2(h, d);   % tail-recursive call
+
+%%
+%% less than one u64 available
+%%
+u64 mrmr2(u64 h, <<u64? k:a>>) ->
+  h' ^= k,
+  mrmr2(h * M, <<>>);
+
+%%
+%% empty binary
+%%
+u64 mrmr2(u64 h, <<>>) ->
+  h' ^>>= R,
+  h' *= M,
+  h' ^>>= R;
